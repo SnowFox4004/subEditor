@@ -1,0 +1,28 @@
+# 依赖
+node_modules/
+
+# 构建产物
+dist/
+.vite/
+
+# 本地开发
+*.local
+.env
+.env.*
+.dev.vars
+
+# 日志与测试覆盖
+*.log
+coverage/
+
+# 真实浏览器端到端验证截图（scripts/verify-ui.mjs 输出）
+verify-shots/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 本地工具状态
+.wrangler/
+.mimosa/
+.workbuddy-ai/

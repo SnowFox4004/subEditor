@@ -1,0 +1,9 @@
+# Cloudflare Pages 配置
+# 部署：npm run deploy（内部执行 wrangler pages deploy dist --project-name=srteditor）
+#
+# 本项目是纯静态 SPA，没有任何 Functions / KV / D1 依赖，
+# 因此这里只需要声明产物目录，不需要 bindings 配置。
+
+name = "srteditor"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-10-01"

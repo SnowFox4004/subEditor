@@ -1,0 +1,19 @@
+{
+  "name": "srtEditor · 字幕编辑器",
+  "short_name": "srtEditor",
+  "description": "纯浏览器端的字幕编辑器：多标签页、可视化编辑、批量替换、多格式导出。文件不上传服务器。",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f4f2",
+  "theme_color": "#185fa5",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
