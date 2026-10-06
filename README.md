@@ -2,54 +2,15 @@
 
 纯浏览器端的字幕编辑器。**零后端**，所有解析、编辑、替换、导出都在用户自己的浏览器里完成，文件不上传任何服务器。
 
-部署形态：Cloudflare Pages 免费套餐（无限请求、无限带宽、每月 500 次构建）。
+## 线上体验
 
-## 快速开始
+**[https://srteditor-azw.pages.dev](https://srteditor-azw.pages.dev)** —— 打开即用，无需注册与安装。
 
-```bash
-npm install
-npm run dev          # 本地开发，默认 http://localhost:5173
-```
+## 使用方式
 
-打开页面后把字幕文件拖进去（支持一次拖多个），或点「打开字幕」。
-`samples/demo.srt` 是一个故意埋了重叠、超长行、SDH 标注的示例，可以直接拖进去试。
+把一个或多个字幕文件直接拖进页面，或点「打开字幕」选择文件即可开始，一个文件一个标签页。
 
-## 命令
-
-| 命令 | 说明 |
-|------|------|
-| `npm run dev` | 开发服务器（HMR） |
-| `npm run build` | 类型检查 + 生产构建，产物在 `dist/` |
-| `npm run preview` | 本地预览构建产物 |
-| `npm test` | 运行 Vitest 测试套件 |
-| `npm run typecheck` | 只做类型检查 |
-| `npm run deploy` | 构建并部署到 Cloudflare Pages |
-
-## 部署到 Cloudflare Pages
-
-线上地址：**https://srteditor-azw.pages.dev**（另有自定义域名 `srteditor.sfx4.dpdns.org`）
-
-> ⚠️ 这个 Pages 项目的**生产分支名是 `production`，不是 `main`**。
-> 部署命令必须带 `--branch=production`，否则会被当成预览部署，生产域名不会更新。
-
-### 方式一：命令行（最快）
-
-```bash
-npx wrangler login          # 首次需要，浏览器点一下授权
-npm run deploy              # 已经带好了 --branch=production
-```
-
-### 方式二：接 GitHub 自动构建
-
-仓库里已经有 `.github/workflows/deploy.yml`。在 GitHub 仓库设置里加两个 Secret：
-
-- `CLOUDFLARE_API_TOKEN`（Cloudflare Dashboard → My Profile → API Tokens，权限选 `Cloudflare Pages: Edit`）
-- `CLOUDFLARE_ACCOUNT_ID`（Dashboard 右侧栏可见）
-
-之后每次 push 到 `main` 都会自动跑测试 + 构建 + 部署到生产。
-
-> 免费套餐额度：无限请求与带宽、每月 500 次构建、单站点 20,000 个文件、单文件 25 MiB。
-> 本项目产物只有 4 个文件（约 115KB gzip），日常使用完全碰不到上限。
+首次打开后可安装为桌面应用（PWA），断网后仍能打开使用；工作区会自动保存，刷新或意外关闭后可原样恢复。
 
 ## 功能
 
@@ -77,7 +38,7 @@ npm run deploy              # 已经带好了 --branch=production
 - **字符级 diff 预览**：先算不改，被改动的字符用底色标出
 - **逐条采纳或拒绝**，也可以全选/全不选
 - 范围可选当前文件或全部标签页
-- 规则集可保存复用（存在 localStorage）
+- 规则集可保存复用（存在本地）
 - 锁定的条目自动跳过
 
 ### 切分超长条目
@@ -123,7 +84,7 @@ npm run deploy              # 已经带好了 --branch=production
 ### 其他
 
 - **编码识别**：自动识别 UTF-8 / UTF-8 BOM / GB18030(GBK) / BIG5 / UTF-16 / Shift_JIS
-- **自动保存**：工作区存入 IndexedDB，刷新或崩溃后可原样恢复（含未保存的修改）
+- **自动保存**：工作区存在本地浏览器中，刷新或崩溃后可原样恢复（含未保存的修改）
 - **PWA**：可安装，断网后仍能打开使用
 - **亮暗主题**：跟随系统，可手动切换
 - **隐私**：所有处理在本地完成，没有任何网络请求
@@ -149,82 +110,6 @@ npm run deploy              # 已经带好了 --branch=production
 
 媒体区：拖动与编辑区之间的分隔条调整高度比例、双击分隔条恢复默认比例。
 
-## 架构
-
-```
-Cloudflare Pages（静态托管，全球 CDN）
-        ↓
-浏览器内：
-  WebUI 应用层      React 19 + TypeScript
-  核心逻辑层        纯 TS，零 React 依赖，可脱离 DOM 单测
-  重计算            Web Worker（批量替换，防正则灾难性回溯）
-  本地持久化        IndexedDB（工作区自动保存）+ localStorage（规则集、主题）
-```
-
-**设计约束（改动时请遵守）**
-
-1. `src/core/` **禁止 import React**。这层是纯函数，必须能被 Vitest 脱离 DOM 直接跑。
-2. **不引入任何服务端代码**。没有 `/api`、没有数据库、没有会话，所有状态在浏览器内。
-3. 可能卡住主线程的计算（批量替换）必须走 **Web Worker**，并带超时。
-4. 新增字幕格式 = 在 `src/core/formats/` 加一个文件 + 在 `formats/index.ts` 注册，**不改 UI**。
-5. 文档模型 `SubtitleDoc` 全程不可变，撤销重做靠整份快照栈。
-
-### 目录
-
-```
-src/
-├── core/                纯逻辑层（无 React 依赖）
-│   ├── types.ts             数据模型
-│   ├── timecode.ts          时间码解析 / 格式化 / 帧对齐
-│   ├── timeline.ts          时间轴几何、刻度、拖拽求值与吸附
-│   ├── encoding.ts          编码探测与转换
-│   ├── document.ts          文档级不可变操作
-│   ├── validation.ts        质检规则
-│   ├── openFile.ts          字节流 → SubtitleDoc（含格式自动识别）
-│   ├── replace/             批量替换：diff.ts 字符级 diff、engine.ts 规则引擎
-│   └── formats/             格式注册表 + 各格式 codec
-├── workers/              Web Worker（批量替换）
-├── state/                Zustand store（editor + player）+ 撤销重做 + IndexedDB 持久化
-├── components/           UI 组件
-├── lib/                  下载 / zip 等浏览器能力封装
-└── styles/               设计令牌与全局样式
-```
-
-## 技术栈
-
-Vite 8 · React 19 · TypeScript · Zustand · @tanstack/react-virtual · fflate · Vitest + happy-dom
-
-## 测试
-
-```bash
-npm test
-```
-
-255 个用例，覆盖：
-
-- 时间码边界（`,`/`.` 混用、缺毫秒、全角标点、帧对齐）
-- SRT 容错解析（序号缺失乱序、正文含空行、块间缺空行、`--->`、游离文本）
-- 全部 12 种格式的解析与序列化往返
-- 编码探测（GBK / UTF-8 BOM / 无 BOM UTF-8）
-- 文档操作（平移、缩放、拆分、合并、去重、重叠修复）
-- 撤销重做栈
-- 时间轴几何与拖拽求值（含吸附、多选、最短时长约束）
-- 批量替换（规则编译、整词、大小写、`$1` 反向引用、多规则叠加、逐条采纳）
-- 字符级 diff 的「重建 == after」不变式
-- 超长条目切分（断点选择、时间按比例分配且无缝无叠、段数受最短时长约束、计数与实际方案严格一致）
-- 表格列布局（默认列宽足够放下时间码、模板随显隐同步、宽度夹取）
-- App / CueRow / 时间轴 / 媒体预览 / 表格列的组件级冒烟测试
-
-此外还有一层**真实浏览器验证**（`scripts/verify-ui.mjs`，用本机 Chrome 跑，不需要下载浏览器）：
-
-```bash
-npm run build && npm run preview    # 一个终端里跑着
-npm i -D playwright-core            # 只在需要时装
-node scripts/verify-ui.mjs          # 截图输出到 verify-shots/
-```
-
-它会检查时间码不溢出单元格、表头与数据行列宽一致、默认无横向滚动、拖动分隔线能改列宽、隐藏列后表头同步、媒体区在编辑区上方且占满宽度、拖拽分隔条能改高度、切分预览与应用的端到端流程。**改动布局后建议重跑一遍。**
-
 ## 已知限制
 
 - 导出 GBK / BIG5 编码尚未支持（需要按需加载码表），界面里已标为「尚未支持」
@@ -233,3 +118,9 @@ node scripts/verify-ui.mjs          # 截图输出到 verify-shots/
 - 移动端只保证查看与轻编辑，拖拽交互需要桌面端
 - 编码自动探测对 GB18030 与 BIG5 的区分依赖 `TextDecoder` 的严格模式，极少数文件可能误判；导出前可在状态栏核对
 - 界面目前只有简体中文，i18n 尚未接入
+
+## 相关文档
+
+- [DEVELOPMENT.md](DEVELOPMENT.md) — 面向开发者：本地运行、命令、部署到 Cloudflare Pages、架构与技术栈
+- [TESTING.md](TESTING.md) — 测试说明：单元测试覆盖与真实浏览器验证
+- [AGENTS.md](AGENTS.md) — 面向协作者/AI 的仓库导览

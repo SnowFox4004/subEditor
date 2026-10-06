@@ -9,7 +9,7 @@
 
 **纯浏览器端的字幕编辑器（SPA）**。所有解析、编辑、批量替换、质检、导出**全部在用户浏览器内完成**，文件不上传任何服务器。
 
-- 线上地址：`https://srteditor-azw.pages.dev`（自定义域 `srteditor.sfx4.dpdns.org`）
+- 线上地址：`https://srteditor-azw.pages.dev`
 - 部署形态：Cloudflare Pages 免费套餐（纯静态托管，**零后端**）
 - 支持 12 种格式导入 / 13 种格式导出、多标签页、表格 + 时间轴 + 媒体预览三视图、批量替换、批量操作、质检、PWA 离线、自动保存
 
@@ -77,7 +77,9 @@ srtEditor/
 ├── wrangler.toml               # Cloudflare Pages：pages_build_output_dir = dist
 ├── package.json                # 命令见第 8 节
 ├── PLAN.md                     # 原始实现计划书（含决策与偏差记录）
-├── README.md                   # 面向用户的说明（功能/快捷键/部署）
+├── README.md                   # 面向用户的说明（功能/快捷键/已知限制）
+├── DEVELOPMENT.md              # 面向开发者：本地运行/部署到 CF Pages/架构
+├── TESTING.md                  # 测试说明：单测覆盖 + 真实浏览器验证
 ├── AGENTS.md                   # ← 本文件（面向协作者）
 ├── .github/workflows/deploy.yml
 ├── scripts/verify-ui.mjs       # 真实浏览器端到端验证（本机 Chrome）
@@ -323,6 +325,8 @@ npm run deploy       # 构建并部署 Cloudflare Pages（已带 --branch=produc
 
 ## 11. 相关文档
 
-- `README.md` — 面向**用户**：功能、快捷键、部署步骤、边界行为。
+- `README.md` — 面向**用户**：功能、快捷键、边界行为。
+- `DEVELOPMENT.md` — 面向**开发者**：本地运行、命令、Cloudflare Pages 部署、架构与技术栈。
+- `TESTING.md` — 测试说明：单测覆盖范围与真实浏览器验证脚本。
 - `PLAN.md` — 原始实现计划书：需求拆解、里程碑、风险对策、**技术选型偏差及理由**。
 - 本文件 `AGENTS.md` — 面向**协作者/AI**：架构、实现细节、约定。
